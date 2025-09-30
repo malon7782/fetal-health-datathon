@@ -1,26 +1,32 @@
+# @data
+#	.features .targets: pandas.core.frame.DataFrame
+# Returns: balanced_accuracy_score, f1_score
+
 def model_training(data):
-        from ucimlrepo import fetch_ucirepo, list_available_datasets
-        import sklearn
+	from sklearn.ensemble import RandomForestClassifier
+	from sklearn.metrics import balanced_accuracy_score, f1_score
 
-        sklearn.show_versions()
+	# access data
+	# type(X) = <class 'pandas.core.frame.DataFrame'>
+	X = data.features
+	y = data.targets
+	# train model e.g. sklearn.linear_model.LinearRegression().fit(X, y)
 
-        # check which datasets can be imported
-        list_available_datasets()
+	y = y['NSP']
 
-        # import dataset
-        heart_disease = fetch_ucirepo(id=193)
-        # alternatively: fetch_ucirepo(name='Heart Disease')
+	X_training = X[0:len(X)//2]
+	y_training = y[0:len(y)//2]
+	X_test = X[len(X)//2:]
+	y_test = y[len(y)//2:]
 
-        # access data
-        X = heart_disease.data.features
-        y = heart_disease.data.targets
-        # train model e.g. sklearn.linear_model.LinearRegression().fit(X, y)
+	y_pred = RandomForestClassifier().fit(X_training, y_training).predict(X_test)
 
-        y = y['NSP']
+	return balanced_accuracy_score(y_test, y_pred), f1_score(y_test, y_pred, average='macro')
 
-        sklearn.linear_model.LinearRegression().fit(X, y)
+	# access metadata
+	print(heart_disease.metadata.uci_id)
+	print(heart_disease.metadata.num_instances)
+	print(heart_disease.metadata.additional_info.summary)
 
-        y_pred = sklearn.ensemble.RandomForestClassifier().fit(X, y).predict(X)
-
-        print("Balanced accuracy:", sklearn.metrics.balanced_accuracy_score(y, y_pred))
-        print("F1 score", sklearn.metrics.f1_score(y, y_pred, average='macro'))
+	# access variable info in tabular format
+	print(heart_disease.variables)
