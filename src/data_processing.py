@@ -51,13 +51,20 @@ def create_features(df: pd.DataFrame) -> pd.DataFrame:
     return df_featured
 
 def encode_target(y: pd.Series):
+    
+    mapping = {
+        'Normal': 1,
+        'Suspect': 2,
+        'Pathologic': 3
+    }
 
-    label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(y)
+    y_encoded = y.map(mapping)
 
-    print(f"{list(label_encoder.classes_)} -> {list(range(len(label_encoder.classes_)))}")
+    print(f"mapping: {mapping}")
 
-    return y_encoded, label_encoder
+    inverse_mapping = {v: k for k, v in mapping.items()}
+
+    return y_encoded, inverse_mapping
 
 
 
