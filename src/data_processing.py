@@ -65,6 +65,3 @@ def encode_target(y: pd.Series):
     inverse_mapping = {v: k for k, v in mapping.items()}
 
     return y_encoded, inverse_mapping
-
-
-
