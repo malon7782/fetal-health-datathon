@@ -83,10 +83,12 @@ def encode_target(y: pd.Series):
 
 
 
+
 def model_training(data):
 	from sklearn.ensemble import RandomForestClassifier
 	from sklearn.metrics import balanced_accuracy_score, f1_score
 
+	data = data_load(data)
 
 	# access data
 	# type(X) = <class 'pandas.core.frame.DataFrame'>
@@ -113,9 +115,6 @@ def model_training(data):
 
 	# access variable info in tabular format
 	print(heart_disease.variables)
-
-
-
 
 
 
