@@ -1,5 +1,4 @@
-# @data
-#	.features .targets: pandas.core.frame.DataFrame
+#   .features .targets: pandas.core.frame.DataFrame
 # Returns: balanced_accuracy_score, f1_score
 import pandas as pd
 import numpy as np
@@ -10,6 +9,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, balanced_accuracy_score, f1_score
 from types import SimpleNamespace
+import os
 
 
 def load_data(file_path: str, sheet_name: str = 'Raw Data') -> pd.DataFrame:
@@ -32,24 +32,6 @@ def load_data(file_path: str, sheet_name: str = 'Raw Data') -> pd.DataFrame:
         return None
 
 
-
-def plot_data(df: pd.DataFrame, target_column: str = 'NSP'):
-    
-    print(f"Distribution of {target_column}")
-    print(df[target_column].value_counts(normalize=True))
-
-    key_features = ['LB', 'AC', 'FM']
-
-    key_features = [f for f in key_features if f in df.columns]
-
-    if key_features:
-        plt.figure(figsize=(15, 10))
-        for i, feature in enumerate(key_features):
-            plt.subplot(2, 2, i+1)
-            sns.histplot(data=df, x=feature, hue=target_column, kde=True, multiple="stack")
-            plt.title(f"{feature}")
-        plt.tight_layout()
-        plt.show()
 
 
 
@@ -80,41 +62,68 @@ def encode_target(y: pd.Series):
     inverse_mapping = {v: k for k, v in mapping.items()}
 
     return y_encoded, inverse_mapping
-
-
-
+def plot_feature_importance(model, feature_names):
+    importances = model.feature_importances_
+    importance_df = pd.DataFrame({
+        'feature': feature_names,
+        'importance': importances
+    }).sort_values(by='importance', ascending=False)
+    
+    print(importance_df)
+    
+    plt.figure(figsize=(12, 10))
+    sns.barplot(x='importance', y='feature', data=importance_df)
+    plt.title('RANK', fontsize=16)
+    plt.xlabel('score', fontsize=12)
+    plt.ylabel('feature', fontsize=12)
+    plt.tight_layout()
+    
+    output_dir = 'output'
+    os.makedirs(output_dir, exist_ok=True)
+    
+    save_path = os.path.join(output_dir, 'feature_importance.png')
+    
+    plt.savefig(save_path)
+    
+    plt.close()
+    
 
 def model_training(data):
-	from sklearn.ensemble import RandomForestClassifier
-	from sklearn.metrics import balanced_accuracy_score, f1_score
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import balanced_accuracy_score, f1_score
 
-	data = data_load(data)
 
-	# access data
-	# type(X) = <class 'pandas.core.frame.DataFrame'>
+    # access data
+    # type(X) = <class 'pandas.core.frame.DataFrame'>
 
-	X = data.features
-	y = data.targets
-	# train model e.g. sklearn.linear_model.LinearRegression().fit(X, y)
+    X = data.features
+    y = data.targets
+    # train model e.g. sklearn.linear_model.LinearRegression().fit(X, y)
 
-	y = y['NSP']
+    y = y['NSP']
 
-	X_training = X[0:len(X)//2]
-	y_training = y[0:len(y)//2]
-	X_test = X[len(X)//2:]
-	y_test = y[len(y)//2:]
+    X_training = X[0:len(X)//2]
+    y_training = y[0:len(y)//2]
+    X_test = X[len(X)//2:]
+    y_test = y[len(y)//2:]
+    
+    scaler = StandardScaler()
+    scaler.fit(X_training)
+    X_train_scaled = scaler.transform(X_training)
+    X_test_scaled = scaler.transform(X_test)
 
-	y_pred = RandomForestClassifier().fit(X_training, y_training).predict(X_test)
+    model = RandomForestClassifier(random_state = 42)
+    y_pred = model.fit(X_train_scaled, y_training).predict(X_test_scaled)
 
-	return balanced_accuracy_score(y_test, y_pred), f1_score(y_test, y_pred, average='macro')
+    return balanced_accuracy_score(y_test, y_pred), f1_score(y_test, y_pred, average='macro'), model
 
-	# access metadata
-	print(heart_disease.metadata.uci_id)
-	print(heart_disease.metadata.num_instances)
-	print(heart_disease.metadata.additional_info.summary)
+    # access metadata
+    print(heart_disease.metadata.uci_id)
+    print(heart_disease.metadata.num_instances)
+    print(heart_disease.metadata.additional_info.summary)
 
-	# access variable info in tabular format
-	print(heart_disease.variables)
+    # access variable info in tabular format
+    print(heart_disease.variables)
 
 
 
@@ -126,19 +135,37 @@ if __name__ == '__main__':
     
     DATA_FILE_PATH = 'data/CTG.xls'
     TARGET_COLUMN = 'NSP'
-    USELESS_COLUMNS = ['FileName', 'Date', 'SegFile', 'CLASS', 'b', 'e']
+    USELESS_COLUMNS = ['FileName', 'Date', 'SegFile', 'CLASS', 'b', 'e', 'A', 'B', 'C', 'D', 'E', 'DE', 'LD' ,'FS', 'SUSP', 'AD']
+    EXPORT_FILE_PATH = 'output/loaded_data.csv'
+
 
     raw_df = load_data(DATA_FILE_PATH, sheet_name='Raw Data')
 
     if raw_df is not None:
         df_cleaned = raw_df.drop(columns=USELESS_COLUMNS, errors='ignore')
 
+
+
+
+
+        os.makedirs(os.path.dirname(EXPORT_FILE_PATH), exist_ok=True)
+    
+        df_cleaned.to_csv(EXPORT_FILE_PATH, index=False)
+
+
+
+
+
         data_t = SimpleNamespace()
-        data_t.features = df_cleaned.drop(columns=[TARGET_COLUMN], errors='ignore')
+        features_df = df_cleaned.drop(columns=[TARGET_COLUMN], errors='ignore')
+        data_t.features = create_features(features_df)
         data_t.targets = pd.DataFrame(df_cleaned[TARGET_COLUMN], columns=[TARGET_COLUMN])
         
-        bal_acc, f1 = model_training(data_t)
-            
+        bal_acc, f1 , trained_model= model_training(data_t)
+        
+        if hasattr(trained_model, 'estimators_'):
+            plot_feature_importance(trained_model, data_t.features.columns)
+
         print(f"Balanced Accuracy: {bal_acc:.4f}")
         print(f"Macro F1 Score: {f1:.4f}")
             
