@@ -39,9 +39,7 @@ def create_features(df: pd.DataFrame) -> pd.DataFrame:
     
     df_featured = df.copy()
 
-    df_featured['deceleration_risk_score'] = df['DL'] * 1 + \
-                                             df['DS'] * 2 + \
-                                             df['DP'] * 3
+    df_featured['ASTV_x_Mean'] = df['ASTV'] * df['Mean']
     
     return df_featured
 
@@ -83,6 +81,7 @@ def plot_feature_importance(model, feature_names):
     
     save_path = os.path.join(output_dir, 'feature_importance.png')
     
+
     plt.savefig(save_path)
     
     plt.close()
@@ -91,7 +90,8 @@ def plot_feature_importance(model, feature_names):
 def model_training(data):
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import balanced_accuracy_score, f1_score
-
+    from lightgbm import LGBMClassifier
+    from xgboost import XGBClassifier
 
     # access data
     # type(X) = <class 'pandas.core.frame.DataFrame'>
@@ -101,19 +101,38 @@ def model_training(data):
     # train model e.g. sklearn.linear_model.LinearRegression().fit(X, y)
 
     y = y['NSP']
+    """
+    X_training = X[0:len(X)//5]
+    y_training = y[0:len(y)//5]
+    X_test = X[len(X)//5:]
+    y_test = y[len(y)//5:]
+    """
+    X_training, X_test, y_training, y_test = train_test_split(
+        X, y, 
+        test_size=0.5, 
+        random_state=42, 
+        stratify=y  
+    )
 
-    X_training = X[0:len(X)//2]
-    y_training = y[0:len(y)//2]
-    X_test = X[len(X)//2:]
-    y_test = y[len(y)//2:]
-    
     scaler = StandardScaler()
     scaler.fit(X_training)
     X_train_scaled = scaler.transform(X_training)
     X_test_scaled = scaler.transform(X_test)
 
-    model = RandomForestClassifier(random_state = 42)
+    model = RandomForestClassifier(random_state = 42, max_depth = 20, max_features = 'sqrt', min_samples_leaf = 1, n_estimators = 300)
+
+
     y_pred = model.fit(X_train_scaled, y_training).predict(X_test_scaled)
+
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_test, y_pred)
+    
+    print(cm)
+
+
+
+
 
     return balanced_accuracy_score(y_test, y_pred), f1_score(y_test, y_pred, average='macro'), model
 
@@ -135,17 +154,17 @@ if __name__ == '__main__':
     
     DATA_FILE_PATH = 'data/CTG.xls'
     TARGET_COLUMN = 'NSP'
-    USELESS_COLUMNS = ['FileName', 'Date', 'SegFile', 'CLASS', 'b', 'e', 'A', 'B', 'C', 'D', 'E', 'DE', 'LD' ,'FS', 'SUSP', 'AD']
+    REQUIRED_COLUMNS = ['ASTV', 'ALTV', 'MSTV', 'Mean', 'Mode', 'Median', 'Variance', 'AC', 'UC']
     EXPORT_FILE_PATH = 'output/loaded_data.csv'
 
 
     raw_df = load_data(DATA_FILE_PATH, sheet_name='Raw Data')
 
     if raw_df is not None:
-        df_cleaned = raw_df.drop(columns=USELESS_COLUMNS, errors='ignore')
+        df_cleaned = raw_df[REQUIRED_COLUMNS + [TARGET_COLUMN]]
 
 
-
+    #    df_cleaned[TARGET_COLUMN] = df_cleaned[TARGET_COLUMN].apply(lambda x: 1 if x == 1.0 else 2)
 
 
         os.makedirs(os.path.dirname(EXPORT_FILE_PATH), exist_ok=True)
@@ -163,9 +182,9 @@ if __name__ == '__main__':
         
         bal_acc, f1 , trained_model= model_training(data_t)
         
-        if hasattr(trained_model, 'estimators_'):
-            plot_feature_importance(trained_model, data_t.features.columns)
+        plot_feature_importance(trained_model, data_t.features.columns)
 
         print(f"Balanced Accuracy: {bal_acc:.4f}")
         print(f"Macro F1 Score: {f1:.4f}")
-            
+
+
