@@ -1,5 +1,6 @@
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from joblib import dump 
 
 def model_training(data):
     from sklearn.ensemble import RandomForestClassifier
@@ -31,5 +32,6 @@ def model_training(data):
         f1 = cross_val_score(model, X, y, cv=cv, scoring='f1_macro', n_jobs=-1)
         f1 = f1.mean()
         results.append((bal_acc, f1, model))
+        dump(model, f'models/{type(model).__name__}_model.joblib')
 
     return max(results, key=lambda x: x[0]) if results else (None, 0, 0, None)
