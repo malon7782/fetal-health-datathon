@@ -1,3 +1,4 @@
+import os
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from joblib import dump 
@@ -25,13 +26,17 @@ def model_training(data):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     results = []
-
+    
     for model in models:
-        bal_acc = cross_val_score(model, X, y, cv=cv, scoring='balanced_accuracy', n_jobs=-1)
-        bal_acc = bal_acc.mean()
-        f1 = cross_val_score(model, X, y, cv=cv, scoring='f1_macro', n_jobs=-1)
-        f1 = f1.mean()
+        bal_acc = cross_val_score(model, X, y, cv=cv, scoring='balanced_accuracy', n_jobs=-1).mean()
+        f1 = cross_val_score(model, X, y, cv=cv, scoring='f1_macro', n_jobs=-1).mean()
         results.append((bal_acc, f1, model))
+        
+        model.fit(X, y)
+        
+        os.makedirs('models', exist_ok=True)
         dump(model, f'models/{type(model).__name__}_model.joblib')
+    
+    dump(scaler, 'models/scaler.joblib')
 
     return max(results, key=lambda x: x[0]) if results else (None, 0, 0, None)
