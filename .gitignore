@@ -1,12 +1,12 @@
 # Byte-compiled / optimized / DLL files
-
+.DS_Store
 *.un~
 *.swp
 *.swo
 venv/
 env/
 .venv/
-
+__pycache__
 
 __pycache__/
 *.py[codz]

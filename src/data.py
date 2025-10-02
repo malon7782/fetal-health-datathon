@@ -28,8 +28,7 @@ def create_features(df: pd.DataFrame) -> pd.DataFrame:
     df_featured = df.copy()
 
     if hasattr(df_featured, 'ASTV') and hasattr(df_featured, 'Mean'):
-        df_featured['ASTV_x_Mean'] = df['ASTV'] / df['Mean']
-    
+        pass 
     return df_featured
 
 def plot_feature_importance(model, feature_names):
