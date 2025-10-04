@@ -36,4 +36,4 @@ if __name__ == "__main__":
 
     bal_acc, f1, model = run(BEST_COMBINAION)
 
-    print(f"Balanced Accuracy: {bal_acc:.4f}, F1 Score: {f1:.4f}, Model: {type(model).__name__}")
+    print(f"Balanced Accuracy: {bal_acc:.4f}, F1 Score: {f1:.4f}, Model: {model}")

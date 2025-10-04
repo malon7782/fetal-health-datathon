@@ -4,7 +4,7 @@ import pandas as pd
 class FetalHealthPredictor:
     def __init__(self):
         try:
-            self.model = joblib.load('models/RandomForestClassifier_model.joblib')
+            self.model = joblib.load('models/XGBCLassifier_pipeline.joblib')
             self.scaler = joblib.load('models/scaler.joblib')
         except FileNotFoundError:
             self.model = None
