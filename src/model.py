@@ -4,6 +4,10 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from joblib import dump 
 
 def model_training(data):
+    from imblearn.over_sampling import SMOTE
+    from imblearn.under_sampling import RandomUnderSampler
+    from imblearn.pipeline import Pipeline
+
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import balanced_accuracy_score, f1_score
     from lightgbm import LGBMClassifier
@@ -22,6 +26,16 @@ def model_training(data):
     	RandomForestClassifier(random_state = 42, max_depth = 20, max_features = 'sqrt', min_samples_leaf = 1, n_estimators = 300, class_weight='balanced'),
         XGBClassifier( objective="multi:softmax", num_class=3, eval_metric="mlogloss", random_state=42)
     ]
+
+    oversample = SMOTE(random_state=42)
+    undersample = RandomUnderSampler(random_state=42)
+
+    for model in models:
+        model = Pipeline(steps=[
+            ('smote', oversample),
+            ('undersample', undersample),
+            ('classifier', model)
+        ])
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
