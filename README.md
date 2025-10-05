@@ -1,6 +1,8 @@
 
 ##  CTG Fetal Health Status Prediction Model
 
+TM-78 Tian Yuchen, Du Xuanlin, Wang Guanyu
+
 This project aims to develop a machine learning solution which automatically predicts **fetal health status (Normal, Suspect, Pathologic)** based on **Cardiotocography (CTG)** data using `RandomForestClassifier`.
 
 The final product is an interactive **web app** that allows users to get **real-time predictions** by inputting key metrics.
